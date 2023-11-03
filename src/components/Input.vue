@@ -1,6 +1,6 @@
 <template>
   <div class="search">
-    <label for="search"> Пиши имя друга или фамилию или id </label>
+    <label for="search">{{ label }}</label>
     <input
       id="search"
       :placeholder="placeholder"
@@ -13,7 +13,11 @@
 <script setup>
 import { defineEmits, defineProps } from "vue";
 
-const { modelValue, placeholder } = defineProps(["modelValue", "placeholder"]);
+const { modelValue, placeholder } = defineProps([
+  "modelValue",
+  "placeholder",
+  "label",
+]);
 
 const emit = defineEmits(["update:modelValue"]);
 
@@ -26,7 +30,7 @@ const updateInputValue = (event) => {
 
 <style scoped>
 .search input {
-  width: 300px;
+  max-width: 300px;
   height: 40px;
   padding: 5px 15px;
 }

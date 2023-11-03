@@ -4,6 +4,7 @@ const props = defineProps({
   img: String,
   first_name: String,
   last_name: String,
+  sex: Number,
 });
 
 const emit = defineEmits(["data-updated"]);
