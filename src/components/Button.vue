@@ -1,17 +1,22 @@
 <template>
-  <button class="btn">
+  <button class="btn" @click="handleClick">
     {{ label }}
   </button>
 </template>
 
 <script setup>
-import { defineProps } from "vue";
 const props = defineProps({
   label: {
     type: String,
     default: "Button",
   },
 });
+
+const emit = defineEmits(["click"]);
+
+const handleClick = () => {
+  emit("click");
+};
 </script>
 
 <style scoped>

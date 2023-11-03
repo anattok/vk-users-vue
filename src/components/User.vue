@@ -6,8 +6,10 @@ const props = defineProps({
   last_name: String,
 });
 
+const emit = defineEmits(["data-updated"]);
+
 const handleClick = () => {
-  console.log(props);
+  emit("data-updated", props);
 };
 </script>
 
