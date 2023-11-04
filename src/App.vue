@@ -6,53 +6,79 @@
         placeholder="Пиши"
         label="Имя/Фамилия или id"
       />
-      <Button
-        label="Добавить или удалить из спиcка 'Исходный' "
-        @click="addInOriginalList"
-      />
-      <Button
-        label="Построить"
-        v-if="originalList.length > 0"
-        @click="addOriginalListAllFriends"
-      />
     </div>
     <ul v-if="searchText" class="users">
-      <User
-        @data-updated="updateInput"
-        v-for="user in filteredFriends"
-        :key="user.id"
-        :id="user.id"
-        :img="user.photo_100"
-        :first_name="user.first_name"
-        :last_name="user.last_name"
-        :sex="user.sex"
-      />
+      <li class="users__item" v-for="user in filteredFriends">
+        <User
+          :key="user.id"
+          :id="user.id"
+          :img="user.photo_100"
+          :first_name="user.first_name"
+          :last_name="user.last_name"
+          :sex="user.sex"
+        />
+        <Button
+          :label="isAdded(user.id) ? 'Удалить из списка' : 'Добавить в список'"
+          @click="
+            () => {
+              handlerButtonDropList(user);
+            }
+          "
+        />
+      </li>
+      <li v-if="filteredFriends.length === 0">Совпадений не найдено</li>
     </ul>
     <div class="wrapper__main">
+      <!-- Список "Исходный" -->
+
       <div class="original" v-if="originalList.length > 0">
-        <p>
-          Список "Исходный" <span>Количество {{ originalList.length }}</span>
-        </p>
+        <div class="original__top">
+          <h2>Список "Исходный"</h2>
+          <Button
+            label="Построить"
+            v-if="originalList.length > 0"
+            @click="addOriginalListAllFriends"
+          />
+        </div>
         <ul class="original__list">
-          <li v-for="user in originalList" :key="user.id">
-            <img :src="user.img" :alt="user.first_name" />
+          <li
+            class="original__list__item"
+            v-for="user in originalList"
+            :key="user.id"
+          >
+            <img :src="user.photo_100" :alt="user.first_name" />
+            <p>{{ user.first_name }}</p>
+            <p>{{ user.last_name }}</p>
           </li>
         </ul>
       </div>
+
+      <!-- Список "Друзья" -->
+
       <div class="all-friends" v-if="originalListAllFriends.length > 0">
         <div class="all-friends__top">
-          <p>
-            Список "Друзья "<span
-              >Количество {{ originalListAllFriends.length }}</span
-            >
-          </p>
+          <h2>
+            Список "Друзья"
+            <span>Всего:{{ originalListAllFriends.length }}</span>
+          </h2>
+
+          <div class="sort">
+            <b>Сортировать по:</b>
+            <span @click="toggleSort">{{ typeSort }}</span>
+            <ul class="sort__list" :class="{ active: isOpenedSort }">
+              <li v-for="item in sortList" @click="selectSort(item)">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <ul class="all-friends__list">
           <li
             class="all-friends__item"
-            v-for="user in originalListAllFriends"
+            v-for="user in sortedListAllFriends"
             :key="user.id"
+            ref="userItems"
           >
             <img :src="user.photo_50" :alt="user.first_name" />
             <span>{{ user.first_name }} {{ user.last_name }}</span>
@@ -60,13 +86,22 @@
             <span>{{ user.friend_count }}</span>
           </li>
         </ul>
+        <Button @click="loadMore" label="Показать еще 5 человек" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onBeforeMount, ref, computed } from "vue";
+import {
+  onBeforeMount,
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  withDefaults,
+  watch,
+} from "vue";
 import User from "./components/User.vue";
 import Input from "./components/Input.vue";
 import Button from "./components/Button.vue";
@@ -78,12 +113,16 @@ let ID_USER;
 const friendsList = ref([]);
 //значение инпута
 const searchText = ref("");
-//cохраним пропсы кликнутого юзера
-const clickedUser = ref({});
-//списоку Исходный
+//список Исходный
 const originalList = ref([]);
-//друзья людей списка Исходный
+//Список Друзья
 const originalListAllFriends = ref([]);
+// Отображаемые элементы
+const displayedFriends = ref([]);
+//сортировка
+const typeSort = ref("Имя");
+const isOpenedSort = ref(false);
+const sortList = ["Имя", "Фамилия"];
 
 onBeforeMount(async () => {
   VK.init({
@@ -115,6 +154,33 @@ onBeforeMount(async () => {
     }
   );
 });
+
+//закрывавем открываем сортировку
+const toggleSort = () => {
+  isOpenedSort.value = !isOpenedSort.value;
+};
+
+//меняем typeSort и закрываем
+const selectSort = (item) => {
+  typeSort.value = item;
+  isOpenedSort.value = !isOpenedSort.value;
+};
+
+//сортировка массива
+const sortedListAllFriends = computed(() => {
+  if (typeSort.value === "Имя") {
+    console.log(displayedFriends);
+    console.log(sortedListAllFriends);
+    return displayedFriends.value.sort((a, b) =>
+      a.first_name.localeCompare(b.first_name)
+    );
+  } else if (typeSort.value === "Фамилия") {
+    return displayedFriends.value.sort((a, b) =>
+      a.last_name.localeCompare(b.last_name)
+    );
+  }
+});
+
 //фильтрация списка друзей при вводе в инпут
 const filteredFriends = computed(() => {
   return friendsList.value.filter((user) => {
@@ -123,130 +189,110 @@ const filteredFriends = computed(() => {
   });
 });
 
-//функция добавления или удаления по кнопке
-const addInOriginalList = () => {
-  const userToAdd = clickedUser.value;
-
-  // Проверяем, существует ли пользователь в originalList
-  const existingUserIndex = originalList.value.findIndex(
-    (user) => user.id === userToAdd.id
-  );
-
-  if (existingUserIndex !== -1) {
-    // Если пользователь существует, удаляем его
-    originalList.value.splice(existingUserIndex, 1);
-  } else {
-    // иначе удаляем
-    originalList.value.push(userToAdd);
-  }
-  console.log(originalList.value);
-  searchText.value = ""; // Очищаем инпут
+//проверка добавленности пользователя в списаок друзья для изменения надписи кнопки
+const isAdded = (id) => {
+  return originalList.value.some((user) => user.id === id);
 };
 
-//функция обновление инпута
-const updateInput = (data) => {
-  searchText.value = `${data.first_name} ${data.last_name}`;
-  clickedUser.value = data;
-};
+// добавления или удаления по кнопке
+const handlerButtonDropList = (user) => {
+  const isAddedUser = isAdded(user.id);
 
-const fetchDataFromVK = async (id) => {
-  try {
-    // Выполняем запрос к VK API для получения друзей
-    const response = await new Promise((resolve, reject) => {
-      VK.Api.call(
-        "friends.get",
-        {
-          user_id: id,
-          v: VERSION,
-          fields: "photo_50,sex",
-        },
-        (response) => {
-          resolve(response);
-        }
-      );
-    });
-
-    if (response && response.response) {
-      const newFriends = response.response.items;
-      console.log(newFriends);
-
-      // Фильтруем новых друзей, чтобы исключить дубли
-      const filteredNewFriends = newFriends.filter(
-        (friend) =>
-          !originalListAllFriends.value.some(
-            (existingFriend) => existingFriend.id === friend.id
-          )
-      );
-
-      console.log(filteredNewFriends);
-
-      // Получаем количество друзей для каждого нового друга
-      for (const friend of filteredNewFriends) {
-        const friendId = friend.id;
-
-        try {
-          const friendResponse = await new Promise((resolve, reject) => {
-            VK.Api.call(
-              "friends.get",
-              {
-                user_id: friendId,
-                v: VERSION,
-              },
-              (response) => {
-                resolve(response);
-              }
-            );
-          });
-
-          if (friendResponse && friendResponse.response) {
-            friend.friend_count = friendResponse.response.count;
-          } else {
-            console.error(
-              "Ошибка при получении количества друзей: ",
-              friendResponse
-            );
-            friend.friend_count = 0; // Обработка ошибки, если запрос к VK API не удался
-          }
-        } catch (error) {
-          console.error(
-            "Ошибка при выполнении запроса к VK API для получения друзей: ",
-            error
-          );
-          friend.friend_count = 0; // Обработка ошибки, если запрос к VK API не удался
-        }
-      }
-
-      // Добавляем новых друзей в общий список
-      originalListAllFriends.value.push(...filteredNewFriends);
-
-      console.log(originalListAllFriends.value);
-    } else {
-      console.error("Ошибка при получении списка друзей");
-    }
-  } catch (error) {
-    console.error(
-      "Ошибка при выполнении запроса к VK API для получения друзей: ",
-      error
+  if (isAddedUser) {
+    const indexToRemove = originalList.value.findIndex(
+      (item) => item.id === user.id
     );
+    if (indexToRemove !== -1) {
+      originalList.value.splice(indexToRemove, 1);
+    }
+  } else {
+    originalList.value.push(user);
   }
+  searchText.value = ""; // Сбрасываем текст поиска
+
+  console.log(originalList);
 };
+
+//Подгрузка
+let intersectionObserver = null;
+
+const loadMore = () => {
+  const nextBatch = originalListAllFriends.value.slice(
+    displayedFriends.value.length,
+    displayedFriends.value.length + 5
+  );
+  displayedFriends.value = [...displayedFriends.value, ...nextBatch];
+};
+
+const observerCallback = (entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      const userItem = entry.target.__userItem;
+      const index = displayedFriends.value.findIndex(
+        (user) => user.id === userItem.id
+      );
+      if (index !== -1) {
+        displayedFriends.value.splice(index, 1);
+      }
+    }
+  });
+};
+
+onMounted(() => {
+  displayedFriends.value = originalListAllFriends.value.slice(0, 5); // Отображаем первые 5 элементов при начальной загрузке
+  intersectionObserver = new IntersectionObserver(observerCallback);
+  document.querySelectorAll(".all-friends__item").forEach((item) => {
+    intersectionObserver.observe(item);
+    item.__userItem = item; // Сохраняем элемент пользователя как атрибут
+  });
+});
+
+onUnmounted(() => {
+  intersectionObserver.disconnect();
+});
 
 const addOriginalListAllFriends = async () => {
   const ids = originalList.value.map((user) => user.id);
 
   for (const id of ids) {
-    await fetchDataFromVK(id);
+    await getFriends(id);
+  }
+  loadMore();
+};
+
+const getFriends = async (id) => {
+  const response = await new Promise((resolve, reject) => {
+    VK.Api.call(
+      "friends.get",
+      {
+        user_id: id,
+        v: VERSION,
+        fields: "photo_50,sex",
+      },
+      (response) => {
+        resolve(response);
+      }
+    );
+  });
+
+  if (response && response.response) {
+    const newFriends = response.response.items;
+
+    const filteredNewFriends = newFriends.filter((friend) => {
+      return !originalListAllFriends.value.some((existingFriend) => {
+        return existingFriend.id === friend.id;
+      });
+    });
+
+    originalListAllFriends.value.push(...filteredNewFriends);
   }
 };
 </script>
 
 <style scoped>
 .wrapper__top {
-  display: flex;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 20px;
   margin-bottom: 40px;
+  width: 400px;
 }
 .wrapper {
   position: relative;
@@ -258,30 +304,71 @@ const addOriginalListAllFriends = async () => {
 .users {
   position: absolute;
   background-color: #535151;
-  border: 1px solid #fff;
   top: 80px;
   left: 0;
   padding: 5px 10px;
-  max-height: 280px;
-  width: 300px;
+  max-height: 290px;
+  width: 480px;
   overflow-y: scroll;
+  border-radius: 5px;
+  box-shadow: -8px 8px 5px 0px rgba(0, 0, 0, 0.2);
+}
+
+.users::-webkit-scrollbar {
+  width: 6px;
+}
+.users::-webkit-scrollbar-track {
+  background: #ffa500;
+}
+.users::-webkit-scrollbar-thumb {
+  background-color: #373737;
+  border-radius: 3px;
+}
+.users__item {
+  height: 50px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #373737;
+  margin: 5px 0;
+  border-radius: 5px;
+  overflow: hidden;
+  transition: all 0.3s;
+  padding-right: 30px;
 }
 .original {
   width: 100%;
+  height: auto;
   margin-bottom: 30px;
 }
-.original p {
-  margin-bottom: 10px;
+.original__top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 30px;
 }
-
 .original__list {
   display: flex;
   flex-wrap: wrap;
+  gap: 5px;
   list-style-type: none;
+  background-color: #373737;
+  padding: 10px 30px;
+  border-radius: 5px;
 }
-.original__list li {
-  width: 100px;
-  height: 100px;
+.original__list__item {
+  padding: 10px 20px;
+  width: 140px;
+  height: 180px;
+  text-align: center;
+  background-color: #555454;
+  box-shadow: -8px 8px 5px 0px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+.original__list__item img {
+  border-radius: 5px;
 }
 .all-friends {
   display: flex;
@@ -289,10 +376,14 @@ const addOriginalListAllFriends = async () => {
   width: 100%;
 }
 .all-friends__top {
-  margin-bottom: 10px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
+
 .all-friends__list {
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: scroll;
 }
 
@@ -303,5 +394,36 @@ const addOriginalListAllFriends = async () => {
   margin-bottom: 5px;
   background-color: #535151;
   gap: 10px;
+}
+.sort {
+  position: relative;
+}
+.sort span {
+  cursor: pointer;
+}
+.sort__list {
+  display: none;
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: 100px;
+  list-style-type: none;
+  background-color: #555454;
+  border-radius: 5px;
+  padding: 5px 10px;
+  box-shadow: -8px 8px 5px 0px rgba(0, 0, 0, 0.2);
+}
+.sort__list.active {
+  display: block;
+}
+.sort__list li {
+  cursor: pointer;
+}
+.sort__list li:hover {
+  color: #373737;
+}
+.sort span {
+  margin-left: 5px;
+  border-bottom: 1px dotted #555454;
 }
 </style>

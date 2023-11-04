@@ -30,7 +30,7 @@ const updateInputValue = (event) => {
 
 <style scoped>
 .search input {
-  max-width: 300px;
+  width: 100%;
   height: 40px;
   padding: 5px 15px;
 }
@@ -39,5 +39,8 @@ const updateInputValue = (event) => {
   font-size: 14px;
   margin-bottom: 10px;
   opacity: 0.3;
+}
+.search input {
+  width: 100%;
 }
 </style>

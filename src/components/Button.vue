@@ -10,12 +10,17 @@ const props = defineProps({
     type: String,
     default: "Button",
   },
+  id: Number,
+  img: String,
+  first_name: String,
+  last_name: String,
+  sex: Number,
 });
 
 const emit = defineEmits(["click"]);
 
 const handleClick = () => {
-  emit("click");
+  emit("click", props);
 };
 </script>
 

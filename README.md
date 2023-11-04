@@ -1,7 +1,18 @@
-# Vue 3 + Vite
+# SPA, на базе Vue, позволяющее интерактивно добавлять/удалять пользователей Вконтакте, используя API VK
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+**Что может:**
 
-## Recommended IDE Setup
+- Авторизация VK;
+- Поиск друзей через Имя/Фамилия или id с выпадающим списком автодополнения;
+- Добавление друзей в список "Исходный";
+- Вывод всех друзей людей из списка "Исходный" в список "Друзья" по нажатию кнопки "Построить";
+- Сортировка списка "Друзья" по фамилии/имени;
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+  **Что нужно сделать:**
+
+- Подгрузка данных по скроллу в список "Друзья";
+
+**Используемые технологии:**
+
+- vue 3
+- Версткa: JS/CSS

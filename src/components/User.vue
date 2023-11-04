@@ -15,11 +15,12 @@ const handleClick = () => {
 </script>
 
 <template>
-  <li class="user" @click="handleClick">
+  <!-- <div class="user" @click="handleClick"> -->
+  <div class="user">
     <img class="user__img" :src="img" alt="User Photo" />
     <span class="user__name"> {{ first_name }}</span>
     <span class="user__last-name">{{ last_name }}</span>
-  </li>
+  </div>
 </template>
 
 <style scoped>
@@ -30,13 +31,6 @@ const handleClick = () => {
   background: #373737;
   margin: 5px 0;
   gap: 5px;
-  border-radius: 5px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.user:hover {
-  background-color: #272727;
 }
 .user__img {
   display: block;
